@@ -1,0 +1,223 @@
+---
+title: "Cpu"
+author: "Amanda"
+date: "2017/11/14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+cpu<-read.csv("CPU.csv")
+memory<-read.csv("Memory.csv")
+cpu_mem2<-read.csv("cpu_mem2.csv")
+head(cpu_mem2)
+unique(cpu$machine_id)
+```
+
+```{r}
+colnames(cpu_mem2)
+```
+
+```{r}
+dcpu<-cpu_mem2[,1:8]
+head(dcpu)
+dmem<-cpu_mem2[,c(1,2,3,4)]
+length(unique(dcpu$second))
+```
+```{r}
+unique(dcpu$date)
+library(dplyr)
+allmachine<-unique(dcpu$alldf.machine_id.text.)
+tempall<-c()
+tempneedall<-c()
+yes<-TRUE
+for(m in unique(dcpu$alldf.machine_id.text.)){
+  tempmachine<-c()
+  tempneed<-c()
+  machine<-dcpu[dcpu$alldf.machine_id.text.==allmachine[1],]
+  machine<-dcpu[dcpu$alldf.machine_id.text.==m,]
+  templn<-c()
+  tempavg<-c()
+  tempmax<-c()
+  tempmin<-c()
+  tempsd<-c()
+  for(i in 5:7){
+    t1<-dcpu[machine$date==i,]
+    for(j in 0:23){
+      t2<-t1[t1$hour==j,]
+      for(k in 0:59){
+        t3<-t2[t2$minute==k,]
+        tempavg<-c(mean(t3$alldf.cpu_usage.float.),tempavg)
+        tempmax<-c(max(t3$alldf.cpu_usage.float.),tempmax)
+        tempmin<-c(min(t3$alldf.cpu_usage.float.),tempmin)
+        tempsd<-c(sd(t3$alldf.cpu_usage.float.),tempsd)
+        templn<-c(nrow(t3),templn)
+      }
+    }
+  }
+  tincrease<-c(0,tempavg[2:length(tempavg)]-tempavg[1:length(tempavg)-1])
+  tpercentage<-tincrease/tempavg
+  tempneed<-data.frame(tpercentage,templn)
+  colnames(tempneed)<-paste0(m,colnames(tempneed))
+  tempmachine<-data.frame(tpercentage,tincrease,tempavg,tempmax,tempmin,tempsd,templn)
+  colnames(tempmachine)<-paste0(m,colnames(tempmachine))
+  if(yes){
+    tempall<-tempmachine
+    tempneedall<-tempneed
+    yes<-FALSE
+  }
+  else{
+    tempall<-data.frame(tempmachine,tempall)
+    tempneedall<-data.frame(tempneed,tempneedall)
+  }
+}
+tempall
+tempneedall
+
+
+```
+
+```{r}
+tempincrease<-tempneedall[,c(1,3,5,7,9,11)]
+templn<-tempneedall[,c(2,4,6,8,10,12)]
+tempincrease
+templn
+```
+
+```{r}
+a<-tempincrease$z.323389049.UserCluster1.sysadmintpercentage
+is.na(a)<-0
+boxplot(tempincrease)
+
+is.na(tempincrease)<-0
+for(i in unique(colnames(tempincrease))){
+  is.na(tempincrease$i)<-0
+}
+na.omit(tempincrease)
+summary<-summary(tempincrease)
+class(summary)
+```
+##處理machine
+```{r}
+more<-templn
+i=1
+order(more[i,])
+more[i,]>=max(more[i,])*0.8
+for(i in 1:nrow(templn)){
+  yes<-more[i,]>=max(more[i,])*0.8
+  more[i,yes]=1
+  more[i,!yes]=0
+}
+more
+```
+##處理cpu usage
+```{r}
+sda<-c()
+meana<-c()
+increaselabel<-tempincrease
+i=colnames(tempincrease[1])
+n<-tempincrease[[1]]
+class(n)
+n[is.na(n)]<-mean(n,na.rm = T)
+sd(n)
+
+for(i in 1:6){
+  n<-tempincrease[[i]]
+  n[is.na(n)]<-mean(n,na.rm = T)
+  sdd<-sd(n)
+  meand<-mean(n)
+  increaselabel[n<=meand+0.5*sdd,i]<-0
+  increaselabel[n>meand+0.5*sdd,i]<-1
+  increaselabel[n>meand+sdd,i]<-2
+  increaselabel[n>meand+1.5*sdd,i]<-3
+  
+  sda<-c(sd(n),sda)
+  meana<-c(mean(n),meana)
+}
+
+View(increaselabel)
+```
+
+##make y
+```{r}
+i=100
+add<-increaselabel[i,]
+moreone<-more[i,]
+add
+moreone
+sum(add*moreone)
+y<-c()
+for(i in 1:nrow(increaselabel)){
+  add<-increaselabel[i,]
+  moreone<-more[i,]
+  y<-c(sum(add*moreone),y)
+}
+y
+```
+
+##output csv
+```{r}
+alldata<-data.frame(increaselabel,more,y)
+View(alldata)
+nrow(alldata)
+ncol(alldata)
+write.csv(alldata,"cleandata2.csv")
+```
+
+```{r}
+library(dplyr)
+for(i in 0:23){
+  t1<-df[df$hour==i,]
+  for(j in 5:7){
+    t2<-t1[t1$date==j,]
+##    t3<-t2[t2$minute==k,]
+##    head(t2)
+    plot(t2$minute,t2$alldf.cpu_usage.float.,xlab = paste0("hour",i,"day",j))
+  }
+}
+```
+
+```{r}
+library(dplyr)
+temp1<-data.frame(1,2,3,4,5,6)
+temp1
+for(i in 0:23){
+  t1<-df[df$hour==i,]
+  for(j in 5:7){
+    t2<-t1[t1$date==j,]
+    for(k in unique(t2$alldf.machine_id.text.)){
+        t3<-t2[t2$alldf.machine_id.text.==k,]
+        tmean<-sapply(split(t3$alldf.cpu_usage.float., rep(1:(nrow(t3)/5), each=5)), mean)
+        tmin<-sapply(split(t3$alldf.cpu_usage.float., rep(1:(nrow(t3)/5), each=5)), min)
+        tmax<-sapply(split(t3$alldf.cpu_usage.float., rep(1:(nrow(t3)/5), each=5)), max)
+        tsd<-sapply(split(t3$alldf.cpu_usage.float., rep(1:(nrow(t3)/5), each=5)), sd)
+    }
+    tincrease<-c(0,tmean[2:length(tmean)]-tmean[1:length(tmean)-1])
+    tup<-rep(0,length(tincrease))
+  }
+}
+data.frame(tup,tincrease,tmean,tmin,tmax,tsd)
+```
+
+```{r}
+sum(tincrease>0.1)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
