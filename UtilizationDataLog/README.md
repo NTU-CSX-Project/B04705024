@@ -1,6 +1,7 @@
 # UtilizationDataLog
 
 ## 1. 資料處理(R)
+
 參考clean.rmd
 Step1: 用machine id區別不同machine，並提取該machine每分鐘的資料
 Step2: 算出每個machine每分鐘CPU utilization 的最小最大及平均值
