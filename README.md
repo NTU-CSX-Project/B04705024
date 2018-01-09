@@ -4,4 +4,5 @@
 繳交作業狀況：
 1. Vision api
 2. Titanic
-2. LSTM - UtilizationDataLog
+3. LSTM - UtilizationDataLog
+4. NLP
